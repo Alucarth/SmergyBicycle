@@ -41,10 +41,19 @@ import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
+import android.view.ViewManager;
+import android.view.animation.Animation;
+import android.view.animation.AnimationSet;
+import android.view.animation.ScaleAnimation;
+import android.view.animation.TranslateAnimation;
 import android.widget.Button;
 import android.widget.ImageView;
+import android.widget.RelativeLayout;
 import android.widget.TextView;
 import android.widget.Toast;
+
+import com.plattysoft.leonids.ParticleSystem;
+import com.plattysoft.leonids.modifiers.ScaleModifier;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -82,6 +91,10 @@ public class MainActivity extends AppCompatActivity {
     private Stopwatch timer = new Stopwatch();
     private Stopwatch turnTimer = new Stopwatch();
 
+
+    //list with stars
+    ArrayList<ImageView> stars;
+
     /***********************
      *    BLE parameters   *
      ***********************/
@@ -103,6 +116,7 @@ public class MainActivity extends AppCompatActivity {
     private BluetoothGatt mGatt;
 
     private TextView mTurns;
+    private TextView mDist;
 
     private ProgressDialog mProgress;
 
@@ -176,6 +190,8 @@ public class MainActivity extends AppCompatActivity {
                 }
             });
 
+            stars = new ArrayList<ImageView>();
+
             /*********
              *  BLE  *
              *********/
@@ -193,6 +209,7 @@ public class MainActivity extends AppCompatActivity {
              * We are going to display the results in some text fields
              */
             mTurns = (TextView) findViewById(R.id.turns);
+            mDist = (TextView) findViewById(R.id.dist);
 
             //Check if BLE is supported
             if (!getPackageManager().hasSystemFeature(PackageManager.FEATURE_BLUETOOTH_LE)) {
@@ -344,7 +361,8 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void clearDisplayValues() {
-        mTurns.setText("");
+        //mTurns.setText("");
+        mDist.setText("");
     }
 
     private Runnable mStopRunnable = new Runnable() {
@@ -693,7 +711,9 @@ public class MainActivity extends AppCompatActivity {
                     lpimg.leftMargin = (int) (Math.round(totalTurns * 1.7) -100);
                     img.setLayoutParams(lpimg);
 
-                    mTurns.setText("" + totalTurns);
+                    //mTurns.setText("" + totalTurns);
+                    mDist.setText((int)(totalTurns * 2.125) + " m");
+
                 }
             }
             else {
@@ -709,6 +729,13 @@ public class MainActivity extends AppCompatActivity {
                 sum += magnets.get(i);
             }
             average = sum/magnets.size();
+
+            //TODO: reset value
+            if(totalTurns % 94 == 0) {
+            //if(totalTurns % 3 == 0) { //To test
+                addStar(totalTurns/94);
+                //addStar(totalTurns/3); //To test
+            }
         }
         else {
             //finished
@@ -722,6 +749,75 @@ public class MainActivity extends AppCompatActivity {
             }
         }
     }
+
+    int prevStar = 0;
+    protected void addStar(int nr) {
+        if(prevStar != nr) {
+
+            prevStar = nr;
+
+            RelativeLayout relativeLayout = (RelativeLayout) findViewById(R.id.myRelativeLayout);
+
+            // Create new Instance of imageView
+            ImageView newStar = new ImageView(getBaseContext());
+
+            //RelativeLayout.LayoutParams layoutParams =
+            //        (RelativeLayout.LayoutParams)newStar.getLayoutParams();
+            RelativeLayout.LayoutParams layoutParams = new RelativeLayout.LayoutParams(RelativeLayout.LayoutParams.WRAP_CONTENT, RelativeLayout.LayoutParams.WRAP_CONTENT);
+
+            layoutParams.addRule(RelativeLayout.CENTER_HORIZONTAL, RelativeLayout.TRUE);
+            layoutParams.addRule(RelativeLayout.ALIGN_PARENT_TOP, RelativeLayout.TRUE);
+            layoutParams.setMargins(0, 100, 0, 0);
+            newStar.setLayoutParams(layoutParams);
+
+            relativeLayout.addView(newStar);
+
+            Context context = newStar.getContext();
+            int id = context.getResources().getIdentifier("medal", "drawable", context.getPackageName());
+            newStar.setImageResource(id);
+
+            stars.add(newStar);
+
+            //Sparkling stars
+            ParticleSystem ps = new ParticleSystem(this, 20, R.drawable.star, 3000);
+            ps.setSpeedByComponentsRange(-0.1f, 0.1f, -0.1f, 0.02f)
+                    .setAcceleration(0.000003f, 90)
+                    .setInitialRotationRange(0, 360)
+                    .setRotationSpeed(120)
+                    .setFadeOut(2000)
+                    .addModifier(new ScaleModifier(0f, 1.5f, 0, 1500))
+                    .oneShot(findViewById(R.id.medal), 20);
+
+
+            //Animation
+            ScaleAnimation scAnim = new ScaleAnimation(
+                    1f, 0.5f, // Start and end values for the X axis scaling
+                    1f, 0.5f, // Start and end values for the Y axis scaling
+                    Animation.RELATIVE_TO_SELF, 0.5f, // Pivot point of X scaling
+                    Animation.RELATIVE_TO_SELF, 0.5f); // Pivot point of Y scaling
+            scAnim.setFillAfter(true);
+            scAnim.setDuration(1000);
+
+            TranslateAnimation trAnim = new TranslateAnimation(
+                    TranslateAnimation.ABSOLUTE, 0.0f,
+                    TranslateAnimation.ABSOLUTE, (float) (480 - ((nr - 1) * 50 * 0.75)),
+                    TranslateAnimation.ABSOLUTE, 0.0f,
+                    TranslateAnimation.ABSOLUTE, -120
+            );
+            trAnim.setFillAfter(true);
+            trAnim.setDuration(1000);
+
+            // Animation set to join both scaling and moving
+            AnimationSet animSet = new AnimationSet(true);
+            animSet.setFillAfter(true);
+            animSet.addAnimation(scAnim);
+            animSet.addAnimation(trAnim);
+
+            newStar.startAnimation(animSet);
+
+        }
+    }
+
 
     protected void showDialog() {
 
@@ -762,5 +858,11 @@ public class MainActivity extends AppCompatActivity {
         lpimg.leftMargin = (int) (Math.round(totalTurns * 1.7) -100);
         img.setLayoutParams(lpimg);
 
+        for(int i = 0; i < stars.size(); i++) {
+            ((ViewManager)stars.get(i).getParent()).removeView(stars.get(i));
+        }
+        stars.clear();
+
+        prevStar = 0;
     }
 }
