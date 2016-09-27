@@ -330,7 +330,9 @@ public class MainActivity extends AppCompatActivity {
         //Add any device elements we've discovered to the overflow menu
         for (int i=0; i < mDevices.size(); i++) {
             BluetoothDevice device = mDevices.valueAt(i);
-            menu.add(0, mDevices.keyAt(i), 0, device.getName());
+            if (device.getName() != null){
+                menu.add(0, mDevices.keyAt(i), 0, device.getName());
+            }
         }
 
         return true;
@@ -678,6 +680,7 @@ public class MainActivity extends AppCompatActivity {
     private void updateMagnetoValues(BluetoothGattCharacteristic characteristic) {
 
         if (totalTurns < 471) {
+        //if (totalTurns < 5) { // to Test
             double magnet = SensorTagData.extractMagnetoX(characteristic);
             magnet = Math.abs(magnet);
 
@@ -829,9 +832,42 @@ public class MainActivity extends AppCompatActivity {
 
         TextView distance = (TextView) promptView.findViewById(R.id.dist);
         TextView time = (TextView) promptView.findViewById(R.id.time);
+        TextView energy = (TextView) promptView.findViewById(R.id.energie);
 
-        distance.setText((totalTurns * 2.125) + "m");
-        time.setText(timer.getElapsedTime() + "ms");
+        long t = timer.getElapsedTime();
+        double totalDistance = (totalTurns * 2.125);
+
+        distance.setText(totalDistance + "m");
+        time.setText(t + "ms");
+
+        //Calculate energy
+        //K = 0.5 * I * w^2
+        //I = 0.246 (moment of inertia)
+        //w = 2 * PI() * f (angular velocity)
+        //f = (total distance/ wheel outer diameter)/time
+
+
+        double I = 0.246;
+        double f = (totalDistance / 1.9) / (t / 1000);
+        double w = 2 * Math.PI * f;
+
+        double K = 0.5 * I * w * w;
+
+        Log.e("Energy1", K + "");
+
+        //m = mass
+        int m = 71;
+        double g = 9.81;
+        double c = 0.069396988;
+        double v = (totalTurns/(t / 1000.0 / 60.0)) / 56.20082;
+
+        K = m * g * c * v;
+
+        Log.e("Energy2", K + "");
+
+        energy.setText(K + " Watt");
+
+
 
         // setup a dialog window
         alertDialogBuilder.setCancelable(false)
