@@ -843,13 +843,13 @@ public class MainActivity extends AppCompatActivity {
         //Calculate energy
 
         //m = mass
-        int m = 71;
+        int m = 50;
         double g = 9.81;
         double rpm = totalTurns/(t / 1000.0 / 60.0);
         double radps = (2.0 * Math.PI * rpm) / 60.0;
         double v = radps * 0.34; //0.34 m is straal pedalen
 
-        double p = v * m * g * 0.013; //vermogen in watt
+        double p = v * m * g * 0.069; //vermogen in watt
 
         Log.e("Energy", p + "");
 
