@@ -841,31 +841,19 @@ public class MainActivity extends AppCompatActivity {
         time.setText(t + "ms");
 
         //Calculate energy
-        //K = 0.5 * I * w^2
-        //I = 0.246 (moment of inertia)
-        //w = 2 * PI() * f (angular velocity)
-        //f = (total distance/ wheel outer diameter)/time
-
-
-        double I = 0.246;
-        double f = (totalDistance / 1.9) / (t / 1000);
-        double w = 2 * Math.PI * f;
-
-        double K = 0.5 * I * w * w;
-
-        Log.e("Energy1", K + "");
 
         //m = mass
         int m = 71;
         double g = 9.81;
-        double c = 0.069396988;
-        double v = (totalTurns/(t / 1000.0 / 60.0)) / 56.20082;
+        double rpm = totalTurns/(t / 1000.0 / 60.0);
+        double radps = (2.0 * Math.PI * rpm) / 60.0;
+        double v = radps * 0.34; //0.34 m is straal pedalen
 
-        K = m * g * c * v;
+        double p = v * m * g * 0.013; //vermogen in watt
 
-        Log.e("Energy2", K + "");
+        Log.e("Energy", p + "");
 
-        energy.setText(K + " Watt");
+        energy.setText(p + " Watt");
 
 
 
